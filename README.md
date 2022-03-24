@@ -40,6 +40,13 @@ See all tta options
 Please check out the command options and the example config file, `config_example.yml`, 
 where all connection information for tempo and nodegraph-provider must exist.
 
+# Metrics explained
+On the node the mainStat is a counter on the number of times its been "active" in the
+traces. The secondaryStat is the average latency time of the traces.
+On the edge the mainStat is always 1, and the secondaryStat is always 0. 
+
+So there is room for improvements for your specific use case. I have used the petclinic springboot microservice
+project for testing, https://github.com/spring-petclinic/spring-petclinic-microservices.
 
 
 
