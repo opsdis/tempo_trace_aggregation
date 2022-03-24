@@ -1,6 +1,9 @@
 Tempo trace aggregation - tta
 -----------------------------
 
+> The main purpose of this project is to be a demo for [nodegraph-provider](https://github.com/opsdis/nodegraph-provider)
+
+
 # Overview
 Tempo trace aggregation, tta, is an **example** how to create a dynamic service
 map in Grafana with the [nodegraph plugin](https://grafana.com/docs/grafana/latest/visualizations/node-graph/) 
@@ -9,11 +12,15 @@ It requires the project Nodegraph-provider, https://github.com/opsdis/nodegraph-
 Please read the [README](https://github.com/opsdis/nodegraph-provider/blob/master/README.md) 
 how the setup is done in Grafana.
 
+![Petclinic Graph](docs/petclinic.png?raw=true "Example graph")
+
+
 # Query Tempo
 To get traces out of tempo we need to select on a tag name, default is `service.name`.
 There is also possible just to filter on specific of the tag values of tag name
 with regex. Default regex is `.*`
-
+By default tta will create a additional node for the selected tag, this is often a benfit to get 
+a graph that is fully connected.
 
 # Requirements
 - A tempo installation or just create a free account on [Grafana Cloud](https://grafana.com/products/cloud/)
@@ -31,7 +38,8 @@ See all tta options
     python -m tempo_trace_aggregation -h 
 
 Please check out the command options and the example config file, `config_example.yml`, 
-where all connection information for tempo and nodegraph-provider must exists.
+where all connection information for tempo and nodegraph-provider must exist.
+
 
 
 
