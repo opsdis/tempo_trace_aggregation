@@ -1,0 +1,17 @@
+query:
+  tag: service.name
+  filter: '.*'
+  use_tag_as_node: true
+
+loop:
+  interval: 10
+
+tempo:
+  url: https://tempo-us-central1.grafana.net/tempo/api
+  headers:
+    authorization: 'Basic XXXXXXXXXXX'
+
+nodegraph_provider:
+  url: http://localhost:9393
+  headers:
+    content-type: application/json
