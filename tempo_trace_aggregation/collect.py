@@ -25,10 +25,10 @@ import re
 import time
 from hashlib import md5
 from typing import List, Dict, Any, Set, Tuple
-
 import requests
-
 from tempo_trace_aggregation.logging import Log
+
+TWO_HOURS = 7200.0
 
 log = Log(__name__)
 
@@ -107,7 +107,9 @@ class TempoTraces:
         self.tag_filter = tag_filter
         self.use_tag_as_node = use_tag_as_node
 
-    def execute(self) -> Tuple[List[Node], List[Edge]]:
+    def execute(self,
+                start_time: int = int(time.time() - TWO_HOURS),
+                end_time: int = int(time.time())) -> Tuple[List[Node], List[Edge]]:
 
         start = time.time()
         try:
@@ -124,7 +126,7 @@ class TempoTraces:
             if not re.search(self.tag_filter, self.tag):
                 continue
             try:
-                all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}")
+                all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}&start={start_time}&end={end_time}")
             except EmptyResponse:
                 log.info_fmt({'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"Empty response")
                 continue

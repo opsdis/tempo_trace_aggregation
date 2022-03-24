@@ -48,6 +48,9 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--config',
                         dest="config", help="config file for connections, default config.yml", default='config.yml')
 
+    parser.add_argument('-s', '--search_time',
+                        dest="search_time", help="the number of seconds to search back in time, default 7200 sec (2h)", default=7200)
+
     args = parser.parse_args()
 
     if not args.config:
@@ -70,11 +73,10 @@ if __name__ == "__main__":
     tempo_con.url = parsed_yaml['tempo']['url']
     tempo_con.headers = parsed_yaml['tempo']['headers']
 
-
     while True:
         tempo = TempoTraces(graph=args.graph, connection=tempo_con, tag=args.tag, tag_filter=args.tag_filter,
                             use_tag_as_node=args.use_tag_as_node)
-        nodes, edges = tempo.execute()
+        nodes, edges = tempo.execute(start_time=int(time.time() - float(args.search_time)), end_time=int(time.time()))
 
         nodeprovider = NodeGraphAPI(graph=args.graph, connection=nodegraph_provider_con)
 
