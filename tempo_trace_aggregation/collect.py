@@ -120,13 +120,13 @@ class TempoTraces:
         span_to_node: Dict[str, Set[str]] = {}
         node_span_parent: Dict[str, Set[str]] = {}
 
-        for tag in all_service_tags['tagValues']:
+        for tag_value in all_service_tags['tagValues']:
             if not re.search(self.tag_filter, self.tag):
                 continue
             try:
-                all_traces = self._api_call(f"/search?tags=service.name%3D{tag}")
+                all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}")
             except EmptyResponse:
-                log.info_fmt({'url': f"/search?tags=service.name%3D{tag}"}, f"Empty response")
+                log.info_fmt({'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"Empty response")
                 continue
 
             # high level node for the service
@@ -135,7 +135,7 @@ class TempoTraces:
                 if service_node_id not in nodes:
                     service_node = Node()
                     service_node.id = service_node_id
-                    service_node.title = tag
+                    service_node.title = tag_value
                     service_node.subTitle = "Trace ingress"
                     nodes[service_node_id] = service_node
                     if service_node_id not in span_to_node:
