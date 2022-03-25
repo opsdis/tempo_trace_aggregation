@@ -32,6 +32,7 @@ TWO_HOURS = 7200.0
 
 log = Log(__name__)
 
+EMPTY_RESPONSE = 'No traces found'
 
 class EmptyResponse(Exception):
     pass
@@ -115,7 +116,7 @@ class TempoTraces:
         try:
             all_service_tags = self._api_call(f"/search/tag/{self.tag}/values")
         except EmptyResponse:
-            log.warn_fmt({'url': f"/search/tag/{self.tag}/values"}, f"Empty response")
+            log.warn_fmt({'url': f"/search/tag/{self.tag}/values"}, f"{EMPTY_RESPONSE}")
             return list(), list()
 
         nodes: Dict[str, Node] = {}
@@ -128,7 +129,7 @@ class TempoTraces:
             try:
                 all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}&start={start_time}&end={end_time}")
             except EmptyResponse:
-                log.info_fmt({'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"Empty response")
+                log.info_fmt({'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"{EMPTY_RESPONSE}")
                 continue
 
             # high level node for the service
@@ -152,7 +153,7 @@ class TempoTraces:
                         try:
                             trace_spans = self._api_call(f"/traces/{trace['traceID']}")
                         except EmptyResponse:
-                            log.info_fmt({'url': f"/traces/{trace['traceID']}"}, f"Empty response")
+                            log.info_fmt({'url': f"/traces/{trace['traceID']}"}, f"{EMPTY_RESPONSE}")
                             continue
                         for span_resources in trace_spans['batches']:
                             # print(span_resources['resource']['attributes'][0]['value']['stringValue'])
