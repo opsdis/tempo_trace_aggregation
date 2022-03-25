@@ -37,9 +37,94 @@ See all tta options
 
     python -m tempo_trace_aggregation -h 
 
+Example
+
+     python -m tempo_trace_aggregation -t service.name -s 1200 -l 120
+
+This will collect traces that have a label called `service.name` and aggregate on the 
+label value of `service.name`. Only traces that happend in the last 1200 second will be 
+aggregated and tta will do a new search every 120 second.
+
+
+
 Please check out the command options and the example config file, `config_example.yml`, 
 where all connection information for tempo and nodegraph-provider must exist.
 
+## Nodegraph-provider configuration
+The following nodegraph-provider configuration has a schema configuration that works with
+tta.
+
+```yml
+# Default values are commented
+# All default values can be overridden using environment values using NODEGRAPH_PROVIDER_XYZ
+# Nested values should be separated with _
+
+
+# API port
+# port: 9393
+# Configuration file name default without postfix
+#config: config
+# The prefix of the metrics
+#prefix: nodegraph_provider
+
+
+redis:
+#  host: "localhost"
+#  port: "6379"
+#  db: 0
+  #maxactive: 350
+#  max_idle: 10
+
+
+# The following do not have any default values
+
+# The graph_schema define the field name and data type for the output to the data source.
+# The field names are also used for the api calls to create, update and delete the nodes and edges.
+# The only field not used in these api calls are the edge id that is automatically set to sourceid:targetid of
+#  the nodes
+graph_schemas:
+  micro:
+    # An example
+    node_fields:
+      - field_name: "id"
+        type: "string"
+      - field_name: "title"
+        type: "string"
+      - field_name: "subTitle"
+        type: "string"
+      - field_name: "mainStat"
+        type: "number"
+        displayName: "Count"
+      - field_name: "secondaryStat"
+        type: "number"
+        displayName: "Avg duration (ms)"
+      - field_name: "arc__failed"
+        type: "number"
+        color: "red"
+      - field_name: "arc__passed"
+        type: "number"
+        color: "green"
+      - field_name: "detail__role"
+        type: "string"
+        displayName: "Role"
+    edge_fields:
+      # id is never used in the api, will be set dynamically to nodes sourceid:targetid
+      - field_name: "id"
+        type: "string"
+      - field_name: "source"
+        type: "string"
+      - field_name: "target"
+        type: "string"
+      - field_name: "mainStat"
+        type: "number"
+      - field_name: "secondaryStat"
+        type: "number"
+      - field_name: "detail__traffic"
+        type: "string"
+        displayName: "Traffic"
+
+
+```
 # Metrics explained
 On the node the mainStat is a counter on the number of times its been "active" in the
 traces. The secondaryStat is the average latency time of the traces.
@@ -47,6 +132,7 @@ On the edge the mainStat is always 1, and the secondaryStat is always 0.
 
 So there is room for improvements for your specific use case. I have used the petclinic springboot microservice
 project for testing, https://github.com/spring-petclinic/spring-petclinic-microservices.
+
 
 
 

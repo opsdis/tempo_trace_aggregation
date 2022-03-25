@@ -33,7 +33,7 @@ if __name__ == "__main__":
                         dest="graph", help="graph model in nodegraph-provider", default='micro')
 
     parser.add_argument('-t', '--tag',
-                        dest="tag", help="tag name to query on, default service_name", default='service.name')
+                        dest="tag", help="tag name to query on, default service.name", default='service.name')
 
     parser.add_argument('-f', '--filter',
                         dest="tag_filter", help="tag filter for the the tag value, default .*", default='.*')
