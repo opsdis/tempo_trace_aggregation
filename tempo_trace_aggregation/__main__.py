@@ -41,15 +41,16 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--not_use_tag_as_node', action='store_false',
                         dest="use_tag_as_node", help="use tag as a node, default true")
 
-    parser.add_argument('-l', '--loop',
+    parser.add_argument('-l', '--loop_interval',
                         dest="loop_interval", help="loop with interval defined, default 0 sec, which means no looping",
                         default=0)
 
     parser.add_argument('-c', '--config',
                         dest="config", help="config file for connections, default config.yml", default='config.yml')
 
-    parser.add_argument('-s', '--search_time',
-                        dest="search_time", help="the number of seconds to search back in time, default 7200 sec (2h)", default=7200)
+    parser.add_argument('-s', '--search_from',
+                        dest="search_from", help="the number of seconds to search back in time, default 7200 sec (2h)",
+                        default=7200)
 
     args = parser.parse_args()
 
@@ -65,6 +66,30 @@ if __name__ == "__main__":
             print(exc)
             exit(1)
 
+    if 'graph' in parsed_yaml:
+        graph = parsed_yaml['graph'].get('name', args.graph)
+    else:
+        graph = args.graph
+
+    if 'query' in parsed_yaml:
+        tag = parsed_yaml['query'].get('tag', args.tag)
+        tag_filter = parsed_yaml['query'].get('filter', args.tag_filter)
+        use_tag_as_node = parsed_yaml['query'].get('use_tag_as_node', args.use_tag_as_node)
+    else:
+        tag = 'tag', args.tag
+        tag_filter = args.tag_filter
+        use_tag_as_node = args.use_tag_as_node
+
+    if 'loop' in parsed_yaml:
+        loop_interval = parsed_yaml['loop'].get('interval', args.loop_interval)
+    else:
+        loop_interval = args.loop_interval
+
+    if 'search' in parsed_yaml:
+        search_from = parsed_yaml['search'].get('from', args.search_from)
+    else:
+        search_from = args.search_from
+
     nodegraph_provider_con = RestConnection()
     nodegraph_provider_con.url = parsed_yaml['nodegraph_provider']['url']
     nodegraph_provider_con.headers = parsed_yaml['nodegraph_provider']['headers']
@@ -74,18 +99,18 @@ if __name__ == "__main__":
     tempo_con.headers = parsed_yaml['tempo']['headers']
 
     while True:
-        tempo = TempoTraces(graph=args.graph, connection=tempo_con, tag=args.tag, tag_filter=args.tag_filter,
-                            use_tag_as_node=args.use_tag_as_node)
-        nodes, edges = tempo.execute(start_time=int(time.time() - float(args.search_time)), end_time=int(time.time()))
+        tempo = TempoTraces(graph=graph, connection=tempo_con, tag=tag, tag_filter=tag_filter,
+                            use_tag_as_node=use_tag_as_node)
+        nodes, edges = tempo.execute(start_time=int(time.time() - float(search_from)), end_time=int(time.time()))
 
-        nodeprovider = NodeGraphAPI(graph=args.graph, connection=nodegraph_provider_con)
+        nodeprovider = NodeGraphAPI(graph=graph, connection=nodegraph_provider_con)
 
         if nodes and edges:
             nodeprovider.update_nodes(nodes=nodes, edges=edges)
         else:
             nodeprovider.delete_graph()
 
-        if int(args.loop_interval) == 0:
+        if int(loop_interval) == 0:
             break
         else:
-            time.sleep(int(args.loop_interval))
+            time.sleep(int(loop_interval))
