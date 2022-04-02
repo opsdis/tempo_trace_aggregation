@@ -24,3 +24,4 @@ RELEASE-VERSION
 dist/
 build/
 config.yml
+docker-compose/tempo_credentials
