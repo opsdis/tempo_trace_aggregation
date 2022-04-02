@@ -1,0 +1,23 @@
+graph:
+  name: micro
+
+query:
+  tag: service.name
+  tag_filter: '.*'
+  use_tag_as_node: true
+
+search:
+  from: 1200
+
+loop:
+  interval: 10
+
+tempo:
+  url: https://tempo-us-central1.grafana.net/tempo/api
+  headers:
+    authorization: 'Basic <your base64 basic auth>'
+
+nodegraph_provider:
+  url: http://nodegraph-provider:9393
+  headers:
+    content-type: application/json

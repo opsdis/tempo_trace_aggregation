@@ -1,0 +1,69 @@
+# Default values are commented
+# All default values can be overridden using environment values using NODEGRAPH_PROVIDER_XYZ
+# Nested values should be separated with _
+
+
+# API port
+# port: 9393
+# Configuration file name default without postfix
+#config: config
+# The prefix of the metrics
+#prefix: nodegraph_provider
+
+
+#redis:
+#  host: "localhost"
+#  port: "6379"
+#  db: 0
+#  maxactive: 350
+#  max_idle: 10
+
+
+# The following do not have any default values
+
+# The graph_schema define the field name and data type for the output to the data source.
+# The field names are also used for the api calls to create, update and delete the nodes and edges.
+# The only field not used in these api calls are the edge id that is automatically set to sourceid:targetid of
+#  the nodes
+graph_schemas:
+  micro:
+    # An example
+    node_fields:
+      - field_name: "id"
+        type: "string"
+      - field_name: "title"
+        type: "string"
+      - field_name: "subTitle"
+        type: "string"
+      - field_name: "mainStat"
+        type: "number"
+        displayName: "CPU"
+      - field_name: "secondaryStat"
+        type: "number"
+      - field_name: "arc__failed"
+        type: "number"
+        color: "red"
+      - field_name: "arc__passed"
+        type: "number"
+        color: "green"
+      - field_name: "detail__role"
+        type: "string"
+        displayName: "Role"
+    edge_fields:
+      # id is never used in the api, will be set dynamically to nodes sourceid:targetid
+      - field_name: "id"
+        type: "string"
+      - field_name: "source"
+        type: "string"
+      - field_name: "target"
+        type: "string"
+      - field_name: "mainStat"
+        type: "number"
+      - field_name: "secondaryStat"
+        type: "number"
+      - field_name: "detail__traffic"
+        type: "string"
+        displayName: "Traffic"
+
+
+

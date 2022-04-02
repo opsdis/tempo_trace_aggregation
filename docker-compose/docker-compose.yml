@@ -1,0 +1,45 @@
+version: '3.3'
+services:
+  nodegraph-provider:
+    #image: athenodon/nodegraph-provider:latest
+    image: nodegraph-provider
+    container_name: nodegraph-provider
+    restart: always
+    environment:
+      - NODEGRAPH_PROVIDER_PORT=9393
+      - NODEGRAPH_PROVIDER_REDIS_HOST=redis
+      - NODEGRAPH_PROVIDER_REDIS_PORT=6379
+    ports:
+      - '9393:9393'
+    networks:
+      - ng-net
+    volumes:
+      - ./ng_config.yaml:/app/config.yaml
+    depends_on:
+      - "redis"
+
+  redis:
+    image: redislabs/redismod
+    container_name: redis
+    restart: always
+    networks:
+      - ng-net
+    ports:
+      - '6379:6379'
+
+  tta:
+    #container_name: tempo_trace_aggregation
+    #build:
+    #  context: ./
+      #target: production
+    image: tempo_trace_aggregation
+    depends_on:
+      - "nodegraph-provider"
+    networks:
+      - ng-net
+    volumes:
+      - ./tta_config.yml:/app/config.yml
+
+networks:
+  ng-net:
+    driver: bridge
