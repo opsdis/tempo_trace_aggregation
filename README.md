@@ -45,12 +45,29 @@ This will collect traces that have a label called `service.name` and aggregate o
 label value of `service.name`. Only traces that happend in the last 1200 second will be 
 aggregated and tta will do a new search every 120 second.
 
-
-
 Please check out the command options and the example config file, `config_example.yml`, 
 where all connection information for tempo and nodegraph-provider must exist.
 
-## Nodegraph-provider configuration
+# Build docker
+
+Use the Dockerfile in the root directory of the project
+
+     docker build -t tempo_trace_aggregation .
+
+To run the image a config file must be mounted
+
+     docker run -v $(pwd)/config.yaml:/app/config.yaml
+
+## Docker compose example
+
+> Build image for [nodegraph-provider](https://github.com/opsdis/nodegraph-provider) before running `docker-compose up`
+
+In the directory `docker-compose` there is a complete example to set up a running example with nodegraph-provider, 
+redis with graph module and tempo_trace_aggregation.
+The example is based on selecting trace tags `service.name`. Just go into the file called `tta_config.yml` and update
+the connection to tempo.
+
+# Nodegraph-provider configuration
 The following nodegraph-provider configuration has a schema configuration that works with
 tta.
 
