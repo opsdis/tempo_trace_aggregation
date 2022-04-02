@@ -1,16 +1,41 @@
+# The content of the this config will take precedence over command argument and
+# default values
+# If command argument should be used comment out the correspondent in this file
+
+# The graph schema to use in the nodegraph provider
+graph:
+  # --graph
+  name: micro
+
 query:
+  # The tag to select in Tempo
+  # --tag
   tag: service.name
+  # The filter regex of the value of the tag
+  # --filter
   filter: '.*'
+  # Use the tag as a uniq node
+  # --not_use_tag_as_node
   use_tag_as_node: true
 
+
+search:
+  # The number of seconds from now where the search will start
+  # --search_from
+  from: 1200
+
 loop:
+  # How often will the query against Tempo be executed
+  # --loop_interval
   interval: 10
 
+# Connection to the Tempo
 tempo:
   url: https://tempo-us-central1.grafana.net/tempo/api
   headers:
     authorization: 'Basic XXXXXXXXXXX'
 
+# Connection to the nodegraph-provider
 nodegraph_provider:
   url: http://localhost:9393
   headers:
