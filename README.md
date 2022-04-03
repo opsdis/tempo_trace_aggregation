@@ -56,7 +56,7 @@ Use the Dockerfile in the root directory of the project
 
 To run the image a config file must be mounted
 
-     docker run -v $(pwd)/config.yaml:/app/config.yaml
+     docker run -v $(pwd)/config.yaml:/app/config.yaml tempo_trace_aggregation
 
 ## Docker compose example
 
