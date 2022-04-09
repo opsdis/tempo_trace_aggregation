@@ -52,6 +52,11 @@ if __name__ == "__main__":
                         dest="search_from", help="the number of seconds to search back in time, default 7200 sec (2h)",
                         default=7200)
 
+    parser.add_argument('-m', '--search_mode',
+                        dest="search_mode",
+                        help="the Tempo search mode, available values are blocks, ingesters or all, default ingester",
+                        default='ingester')
+
     args = parser.parse_args()
 
     if not args.config:
@@ -73,10 +78,10 @@ if __name__ == "__main__":
 
     if 'query' in parsed_yaml:
         tag = parsed_yaml['query'].get('tag', args.tag)
-        tag_filter = parsed_yaml['query'].get('filter', args.tag_filter)
+        tag_filter = parsed_yaml['query'].get('tag_filter', args.tag_filter)
         use_tag_as_node = parsed_yaml['query'].get('use_tag_as_node', args.use_tag_as_node)
     else:
-        tag = 'tag', args.tag
+        tag = args.tag
         tag_filter = args.tag_filter
         use_tag_as_node = args.use_tag_as_node
 
@@ -87,8 +92,10 @@ if __name__ == "__main__":
 
     if 'search' in parsed_yaml:
         search_from = parsed_yaml['search'].get('from', args.search_from)
+        search_mode = parsed_yaml['search'].get('mode', args.search_mode)
     else:
         search_from = args.search_from
+        search_mode = args.search_mode
 
     nodegraph_provider_con = RestConnection()
     nodegraph_provider_con.url = parsed_yaml['nodegraph_provider']['url']

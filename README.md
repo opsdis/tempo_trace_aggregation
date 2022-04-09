@@ -37,15 +37,39 @@ Install python dependency
     pip install -r requierments.txt
 
 See all tta options
+```
+python -m tempo_trace_aggregation -h 
 
-    python -m tempo_trace_aggregation -h 
+usage: __main__.py [-h] [-g GRAPH] [-t TAG] [-f TAG_FILTER] [-n] [-l LOOP_INTERVAL] [-c CONFIG] [-s SEARCH_FROM] [-m SEARCH_MODE]
+
+tta - Tempo trace aggregation
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g GRAPH, --graph GRAPH
+                        graph model in nodegraph-provider
+  -t TAG, --tag TAG     tag name to query on, default service.name
+  -f TAG_FILTER, --filter TAG_FILTER
+                        tag filter for the the tag value, default .*
+  -n, --not_use_tag_as_node
+                        use tag as a node, default true
+  -l LOOP_INTERVAL, --loop_interval LOOP_INTERVAL
+                        loop with interval defined, default 0 sec, which means no looping
+  -c CONFIG, --config CONFIG
+                        config file for connections, default config.yml
+  -s SEARCH_FROM, --search_from SEARCH_FROM
+                        the number of seconds to search back in time, default 7200 sec (2h)
+  -m SEARCH_MODE, --search_mode SEARCH_MODE
+                        the Tempo search mode, available values are blocks, ingesters or all, default ingester
+
+```
 
 Example
 
-     python -m tempo_trace_aggregation -t service.name -s 1200 -l 120
+     python -m tempo_trace_aggregation -t service.name -s 1200 -l 120 -m ingester
 
 This will collect traces that have a label called `service.name` and aggregate on the 
-label value of `service.name`. Only traces that happend in the last 1200 second will be 
+label value of `service.name`. Only traces that exist in the ingester and happened in the last 1200 second will be 
 aggregated and tta will do a new search every 120 second.
 
 Please check out the command options and the example config file, `config_example.yml`, 

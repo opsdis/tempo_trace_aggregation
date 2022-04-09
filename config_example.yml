@@ -23,11 +23,13 @@ search:
   # The number of seconds from now where the search will start
   # --search_from
   from: 1200
+  # --search_mode
+  mode: ingester
 
 loop:
   # How often will the query against Tempo be executed
   # --loop_interval
-  interval: 10
+  interval: 60
 
 # Connection to the Tempo
 tempo:
