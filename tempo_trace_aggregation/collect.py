@@ -103,13 +103,13 @@ class Edge:
 
 class TempoTraces:
     def __init__(self, graph: str, connection: RestConnection, tag: str, tag_filter: str = ".*",
-                 use_tag_as_node: bool = True):
+                 use_tag_as_node: bool = True, service_node_sub_title: str = SERVICE_NODE_SUB_TITLE):
         self.graph = graph
         self._connection = connection
         self.tag = tag
         self.tag_filter = tag_filter
         self.use_tag_as_node = use_tag_as_node
-        self.service_node_sub_title = SERVICE_NODE_SUB_TITLE
+        self.service_node_sub_title = service_node_sub_title
 
     def execute(self,
                 start_time: int = int(time.time() - TWO_HOURS),
