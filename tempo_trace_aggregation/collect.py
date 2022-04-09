@@ -33,6 +33,7 @@ TWO_HOURS = 7200.0
 log = Log(__name__)
 
 EMPTY_RESPONSE = 'No traces found'
+SERVICE_NODE_SUB_TITLE = "Service Node"
 
 
 class EmptyResponse(Exception):
@@ -108,6 +109,7 @@ class TempoTraces:
         self.tag = tag
         self.tag_filter = tag_filter
         self.use_tag_as_node = use_tag_as_node
+        self.service_node_sub_title = SERVICE_NODE_SUB_TITLE
 
     def execute(self,
                 start_time: int = int(time.time() - TWO_HOURS),
@@ -141,12 +143,12 @@ class TempoTraces:
 
             # high level node for the service
             if self.use_tag_as_node:
-                service_node_id = md5(str.encode(f"{self.tag}##service")).hexdigest()
+                service_node_id = md5(str.encode(f"{tag_value}##service")).hexdigest()
                 if service_node_id not in nodes:
                     service_node = Node()
                     service_node.id = service_node_id
                     service_node.title = tag_value
-                    service_node.subTitle = "Trace ingress"
+                    service_node.subTitle = SERVICE_NODE_SUB_TITLE
                     nodes[service_node_id] = service_node
                     if service_node_id not in span_to_node:
                         span_to_node[service_node_id] = set()
