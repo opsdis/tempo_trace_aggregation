@@ -48,7 +48,7 @@ def resolve(arguments: {}, main: str, sub: str, arg, default=None):
     elif main not in arguments and default:
         arguments[main] = {sub: default}
     elif main in arguments and sub not in arguments[main] and default:
-        arguments[main] = {sub: default}
+        arguments[main][sub] = default
 
     if main not in arguments:
         raise MissingArgument(
@@ -75,6 +75,9 @@ def argument_parser() -> Dict[str, Any]:
 
     parser.add_argument('-n', '--not_use_tag_as_node', action='store_false',
                         dest="use_tag_as_node", help="use tag as a node, default true")
+
+    parser.add_argument('-T', '--service_node_sub_title',
+                        dest="service_node_sub_title", help="the subTitle name, if use tag as a node, default 'Service Node'")
 
     parser.add_argument('-l', '--loop_interval',
                         dest="loop_interval", help="loop with interval defined, default 0 sec, which means no looping")
@@ -109,6 +112,7 @@ def argument_parser() -> Dict[str, Any]:
         resolve(parsed_yaml, 'query', 'tag', args.tag, 'service.name')
         resolve(parsed_yaml, 'query', 'tag_filter', args.tag_filter, '.*')
         resolve(parsed_yaml, 'query', 'use_tag_as_node', args.use_tag_as_node, True)
+        resolve(parsed_yaml, 'query', 'service_node_sub_title', args.service_node_sub_title, 'Service Node')
         resolve(parsed_yaml, 'loop', 'interval', args.loop_interval, '0')
         resolve(parsed_yaml, 'search', 'from', args.search_from, '7200')
         resolve(parsed_yaml, 'search', 'mode', args.search_mode, 'ingesters')
@@ -141,7 +145,8 @@ if __name__ == "__main__":
         tempo = TempoTraces(graph=conf['graph']['name'], connection=tempo_con,
                             tag=conf['query']['tag'],
                             tag_filter=conf['query']['tag_filter'],
-                            use_tag_as_node=conf['query']['use_tag_as_node'])
+                            use_tag_as_node=conf['query']['use_tag_as_node'],
+                            service_node_sub_title=conf['query']['service_node_sub_title'])
 
         nodes, edges = tempo.execute(start_time=int(time.time() - float(conf['search']['from'])),
                                      end_time=int(time.time()),
