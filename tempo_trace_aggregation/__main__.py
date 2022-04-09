@@ -39,29 +39,28 @@ class MissingArgument(Exception):
         return self.argument
 
 
-def resolve(arguments: {}, main: str, sub: str, arg, default=None):
+def resolve(arguments: {}, config_object: str, attribute: str, arg, default=None):
     if arg:
-        if main not in arguments:
-            arguments[main] = {sub: arg}
+        if config_object not in arguments:
+            arguments[config_object] = {attribute: arg}
         else:
-            arguments[main][sub] = arg
-    elif main not in arguments and default:
-        arguments[main] = {sub: default}
-    elif main in arguments and sub not in arguments[main] and default:
-        arguments[main][sub] = default
+            arguments[config_object][attribute] = arg
+    elif config_object not in arguments and default:
+        arguments[config_object] = {attribute: default}
+    elif config_object in arguments and attribute not in arguments[config_object] and default:
+        arguments[config_object][attribute] = default
 
-    if main not in arguments:
+    if config_object not in arguments:
         raise MissingArgument(
-            f"Configuration for \"{main}\"->\"{sub}\" is missing in configuration file or as argument "
+            f"Configuration for \"{config_object}\"->\"{attribute}\" is missing in configuration file or as argument "
             f"and no default exists")
-    elif sub not in arguments[main]:
+    elif attribute not in arguments[config_object]:
         raise MissingArgument(
-            f"Configuration for \"{main}\"->\"{sub}\" is missing in configuration file or as argument "
+            f"Configuration for \"{config_object}\"->\"{attribute}\" is missing in configuration file or as argument "
             f"and no default exists")
 
 
 def argument_parser() -> Dict[str, Any]:
-    # global parsed_yaml, graph, tag, tag_filter, use_tag_as_node, loop_interval, search_from, search_mode
     parser = argparse.ArgumentParser(description='tta - Tempo trace aggregation')
 
     parser.add_argument('-g', '--graph',
