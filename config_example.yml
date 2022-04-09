@@ -19,11 +19,12 @@ query:
   use_tag_as_node: true
 
 
+
 search:
   # The number of seconds from now where the search will start
   # --search_from
   from: 1200
-  # --search_mode
+  # --search_mode, can be blocks, ingesters or all
   mode: ingester
 
 loop:
