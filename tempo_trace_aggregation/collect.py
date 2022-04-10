@@ -117,11 +117,11 @@ class TempoTraces:
                 search_mode: str = 'ingesters') -> Tuple[List[Node], List[Edge]]:
 
         start = time.time()
-        log.info_fmt({"tag": self.tag}, "Search tags")
+        log.info_fmt({'graph': self.graph, 'tag': self.tag}, "Search tags")
         try:
             all_service_tags = self._api_call(f"/search/tag/{self.tag}/values")
         except EmptyResponse:
-            log.warn_fmt({'url': f"/search/tag/{self.tag}/values"}, f"{EMPTY_RESPONSE}")
+            log.warn_fmt({'graph': self.graph, 'url': f"/search/tag/{self.tag}/values"}, f"{EMPTY_RESPONSE}")
             return list(), list()
 
         nodes: Dict[str, Node] = {}
@@ -133,12 +133,11 @@ class TempoTraces:
                 continue
             try:
                 s_t = time.time()
-                # log.info_fmt({'tag': self.tag, 'tag_value': tag_value},"Search traces")
                 all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}&start={start_time}&end={end_time}")
-                log.info_fmt({'tag': self.tag, 'tag_value': tag_value, 'response_time': (time.time() - s_t)},
+                log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'response_time': (time.time() - s_t)},
                              "Search traces")
             except EmptyResponse:
-                log.info_fmt({'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"{EMPTY_RESPONSE}")
+                log.info_fmt({'graph': self.graph, 'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"{EMPTY_RESPONSE}")
                 continue
 
             # high level node for the service
@@ -156,18 +155,17 @@ class TempoTraces:
                 service_node = nodes[service_node_id]
 
             if 'traces' in all_traces:
-                log.info_fmt({'tag': self.tag, 'tag_value': tag_value, 'count': len(all_traces['traces'])},
+                log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'count': len(all_traces['traces'])},
                              "Number of traces")
                 for trace in all_traces['traces']:
                     if 'rootTraceName' in trace:
-                        # print(trace['traceID'])
                         try:
                             s_t = time.time()
                             trace_spans = self._api_call(f"/traces/{trace['traceID']}?mode={search_mode}")
-                            log.info_fmt({'tag': self.tag, 'tag_value': tag_value, 'trace_id': trace['traceID'],
+                            log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'trace_id': trace['traceID'],
                                           'response_time': (time.time() - s_t)}, "Fetch trace")
                         except EmptyResponse:
-                            log.info_fmt({'url': f"/traces/{trace['traceID']}"}, f"{EMPTY_RESPONSE}")
+                            log.info_fmt({'graph': self.graph, 'url': f"/traces/{trace['traceID']}"}, f"{EMPTY_RESPONSE}")
                             continue
                         for span_resources in trace_spans['batches']:
                             # print(span_resources['resource']['attributes'][0]['value']['stringValue'])
