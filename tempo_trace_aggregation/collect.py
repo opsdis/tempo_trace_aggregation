@@ -46,6 +46,7 @@ class RestConnection:
         self.username: str = ''
         self.password: str = ''
         self.headers: Dict[str, str] = {}
+        self.timeout = 15
 
     def get_headers(self):
         headers = self.headers
@@ -103,13 +104,15 @@ class Edge:
 
 class TempoTraces:
     def __init__(self, graph: str, connection: RestConnection, tag: str, tag_filter: str = ".*",
-                 use_tag_as_node: bool = True, service_node_sub_title: str = SERVICE_NODE_SUB_TITLE):
+                 use_tag_as_node: bool = True, service_node_sub_title: str = SERVICE_NODE_SUB_TITLE,
+                 trace_threshold_ms: float = 40.0):
         self.graph = graph
         self._connection = connection
         self.tag = tag
         self.tag_filter = tag_filter
         self.use_tag_as_node = use_tag_as_node
         self.service_node_sub_title = service_node_sub_title
+        self.trace_threshold_ms = trace_threshold_ms
 
     def execute(self,
                 start_time: int = int(time.time() - TWO_HOURS),
@@ -193,7 +196,7 @@ class TempoTraces:
                                             ((node.secondaryStat + float(span['endTimeUnixNano']) - float(
                                                 span['startTimeUnixNano']))
                                              / node.mainStat) / 1000000
-                                        if node.secondaryStat > 40.0:
+                                        if node.secondaryStat > self.trace_threshold_ms:
                                             node.arc__failed = 1.0
                                             node.arc__passed = 0.0
                                         else:
@@ -242,7 +245,7 @@ class TempoTraces:
 
     def _api_call(self, url_path: str) -> Dict[str, Any]:
         try:
-            r = requests.get(url=f"{self._connection.url}{url_path}", headers=self._connection.headers)
+            r = requests.get(url=f"{self._connection.url}{url_path}", headers=self._connection.headers, timeout=self._connection.timeout)
             if r.status_code == 200:
                 response = r.json()
                 if response:
@@ -262,7 +265,7 @@ class NodeGraphAPI:
     def delete_graph(self):
         try:
             requests.post(f"{self._connection.url}/api/controller/{self.graph}/delete-all",
-                          headers=self._connection.headers)
+                          headers=self._connection.headers, timeout=self._connection.timeout)
         except Exception as err:
             log.error_fmt(
                 {'graph': self.graph, 'operation': 'delete-all', 'error': err.__str__()},
@@ -275,13 +278,14 @@ class NodeGraphAPI:
         try:
             for node in nodes:
                 r = requests.get(f"{self._connection.url}/api/nodes/{self.graph}/{node.id}",
-                                 headers=self._connection.headers)
+                                 headers=self._connection.headers, timeout=self._connection.timeout)
                 if r.status_code == 404:
                     requests.post(f"{self._connection.url}/api/nodes/{self.graph}", headers=self._connection.headers,
+                                  timeout=self._connection.timeout,
                                   data=json.dumps(node.to_params_id()))
                 elif r.status_code == 200:
                     requests.put(f"{self._connection.url}/api/nodes/{self.graph}/{node.id}",
-                                 headers=self._connection.headers,
+                                 headers=self._connection.headers, timeout=self._connection.timeout,
                                  params=node.to_params())
                 else:
                     log.warn_fmt({'graph': self.graph, 'object': 'node', 'operation': 'create/update',
@@ -293,14 +297,15 @@ class NodeGraphAPI:
         try:
             for edge in edges:
                 r = requests.get(f"{self._connection.url}/api/edges/{self.graph}/{edge.source}/{edge.target}",
-                                 headers=self._connection.headers)
+                                 headers=self._connection.headers, timeout=self._connection.timeout)
                 if r.status_code == 404:
                     requests.post(f"{self._connection.url}/api/edges/{self.graph}", headers=self._connection.headers,
+                                  timeout=self._connection.timeout,
                                   data=json.dumps(edge.to_params()))
 
                 elif r.status_code == 200:
                     requests.put(f"{self._connection.url}/api/edges/{self.graph}/{edge.source}/{edge.target}",
-                                 headers=self._connection.headers,
+                                 headers=self._connection.headers, timeout=self._connection.timeout,
                                  params=node.to_params())
                 else:
                     log.warn_fmt({'graph': self.graph, 'object': 'edge', 'operation': 'create/update',

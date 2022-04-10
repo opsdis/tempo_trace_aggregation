@@ -17,8 +17,9 @@ query:
   # Use the tag as a uniq node
   # --not_use_tag_as_node
   use_tag_as_node: true
-
-
+  # The threshold in ms to indicate a red state of the node in the Nodegraph visual plugin in Grafana
+  # --trace_threshold_ms
+  trace_threshold_ms: 40.0
 
 search:
   # The number of seconds from now where the search will start
@@ -37,9 +38,13 @@ tempo:
   url: https://tempo-us-central1.grafana.net/tempo/api
   headers:
     authorization: 'Basic XXXXXXXXXXX'
+  # Default is 15 sec
+  timeout: 15
 
 # Connection to the nodegraph-provider
 nodegraph_provider:
   url: http://localhost:9393
   headers:
     content-type: application/json
+  # Default is 15 sec
+  timeout: 15

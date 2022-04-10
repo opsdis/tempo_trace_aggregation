@@ -40,19 +40,23 @@ See all tta options
 ```
 python -m tempo_trace_aggregation -h 
 
-usage: __main__.py [-h] [-g GRAPH] [-t TAG] [-f TAG_FILTER] [-n] [-l LOOP_INTERVAL] [-c CONFIG] [-s SEARCH_FROM] [-m SEARCH_MODE]
+usage: __main__.py [-h] [-g GRAPH] [-t TAG] [-f TAG_FILTER] [-n] [-T SERVICE_NODE_SUB_TITLE] [-L TRACE_THRESHOLD_MS] [-l LOOP_INTERVAL] [-c CONFIG] [-s SEARCH_FROM] [-m SEARCH_MODE]
 
 tta - Tempo trace aggregation
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GRAPH, --graph GRAPH
-                        graph model in nodegraph-provider
+                        graph model in nodegraph-provider, no default value
   -t TAG, --tag TAG     tag name to query on, default service.name
   -f TAG_FILTER, --filter TAG_FILTER
                         tag filter for the the tag value, default .*
   -n, --not_use_tag_as_node
                         use tag as a node, default true
+  -T SERVICE_NODE_SUB_TITLE, --service_node_sub_title SERVICE_NODE_SUB_TITLE
+                        the subTitle name, if use tag as a node, default 'Service Node'
+  -L TRACE_THRESHOLD_MS, --trace_threshold_ms TRACE_THRESHOLD_MS
+                        the trace threshold in ms that should indicate red on the graph node, default is 40.0
   -l LOOP_INTERVAL, --loop_interval LOOP_INTERVAL
                         loop with interval defined, default 0 sec, which means no looping
   -c CONFIG, --config CONFIG

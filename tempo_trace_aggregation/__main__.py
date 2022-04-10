@@ -78,6 +78,10 @@ def argument_parser() -> Dict[str, Any]:
     parser.add_argument('-T', '--service_node_sub_title',
                         dest="service_node_sub_title", help="the subTitle name, if use tag as a node, default 'Service Node'")
 
+    parser.add_argument('-L', '--trace_threshold_ms',
+                        dest="trace_threshold_ms",
+                        help="the trace threshold in ms that should indicate red on the graph node, default is 40.0")
+
     parser.add_argument('-l', '--loop_interval',
                         dest="loop_interval", help="loop with interval defined, default 0 sec, which means no looping")
 
@@ -86,6 +90,7 @@ def argument_parser() -> Dict[str, Any]:
 
     parser.add_argument('-s', '--search_from',
                         dest="search_from", help="the number of seconds to search back in time, default 7200 sec (2h)")
+
     parser.add_argument('-m', '--search_mode',
                         dest="search_mode",
                         help="the Tempo search mode, available values are blocks, ingesters or all, default ingester")
@@ -111,6 +116,7 @@ def argument_parser() -> Dict[str, Any]:
         resolve(parsed_yaml, 'query', 'tag', args.tag, 'service.name')
         resolve(parsed_yaml, 'query', 'tag_filter', args.tag_filter, '.*')
         resolve(parsed_yaml, 'query', 'use_tag_as_node', args.use_tag_as_node, True)
+        resolve(parsed_yaml, 'query', 'trace_threshold_ms', args.trace_threshold_ms, '40.0')
         resolve(parsed_yaml, 'query', 'service_node_sub_title', args.service_node_sub_title, 'Service Node')
         resolve(parsed_yaml, 'loop', 'interval', args.loop_interval, '0')
         resolve(parsed_yaml, 'search', 'from', args.search_from, '7200')
@@ -135,17 +141,22 @@ if __name__ == "__main__":
     nodegraph_provider_con = RestConnection()
     nodegraph_provider_con.url = conf['nodegraph_provider']['url']
     nodegraph_provider_con.headers = conf['nodegraph_provider']['headers']
+    if 'timeout' in conf['nodegraph_provider']:
+        nodegraph_provider_con.timeout = conf['nodegraph_provider']['timeout']
 
     tempo_con = RestConnection()
     tempo_con.url = conf['tempo']['url']
     tempo_con.headers = conf['tempo']['headers']
+    if 'timeout' in conf['tempo']:
+        tempo_con.timeout = conf['tempo']['timeout']
 
     while True:
         tempo = TempoTraces(graph=conf['graph']['name'], connection=tempo_con,
                             tag=conf['query']['tag'],
                             tag_filter=conf['query']['tag_filter'],
                             use_tag_as_node=conf['query']['use_tag_as_node'],
-                            service_node_sub_title=conf['query']['service_node_sub_title'])
+                            service_node_sub_title=conf['query']['service_node_sub_title'],
+                            trace_threshold_ms=float(conf['query']['trace_threshold_ms']))
 
         nodes, edges = tempo.execute(start_time=int(time.time() - float(conf['search']['from'])),
                                      end_time=int(time.time()),
