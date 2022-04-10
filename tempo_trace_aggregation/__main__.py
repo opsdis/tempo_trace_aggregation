@@ -21,48 +21,79 @@
 
 import argparse
 import time
+from typing import Dict, Any
 
 import yaml
 
 from tempo_trace_aggregation.collect import TempoTraces, NodeGraphAPI, RestConnection
+from tempo_trace_aggregation.logging import Log
 
-if __name__ == "__main__":
+log = Log(__name__)
+
+
+class MissingArgument(Exception):
+    def __init__(self, argument: str):
+        self.argument = argument
+
+    def get_missing(self):
+        return self.argument
+
+
+def resolve(arguments: {}, config_object: str, attribute: str, arg, default=None):
+    if arg:
+        if config_object not in arguments:
+            arguments[config_object] = {attribute: arg}
+        else:
+            arguments[config_object][attribute] = arg
+    elif config_object not in arguments and default:
+        arguments[config_object] = {attribute: default}
+    elif config_object in arguments and attribute not in arguments[config_object] and default:
+        arguments[config_object][attribute] = default
+
+    if config_object not in arguments:
+        raise MissingArgument(
+            f"Configuration for \"{config_object}\"->\"{attribute}\" is missing in configuration file or as argument "
+            f"and no default exists")
+    elif attribute not in arguments[config_object]:
+        raise MissingArgument(
+            f"Configuration for \"{config_object}\"->\"{attribute}\" is missing in configuration file or as argument "
+            f"and no default exists")
+
+
+def argument_parser() -> Dict[str, Any]:
     parser = argparse.ArgumentParser(description='tta - Tempo trace aggregation')
 
     parser.add_argument('-g', '--graph',
-                        dest="graph", help="graph model in nodegraph-provider", default='micro')
+                        dest="graph", help="graph model in nodegraph-provider, no default value")
 
     parser.add_argument('-t', '--tag',
-                        dest="tag", help="tag name to query on, default service.name", default='service.name')
+                        dest="tag", help="tag name to query on, default service.name")
 
     parser.add_argument('-f', '--filter',
-                        dest="tag_filter", help="tag filter for the the tag value, default .*", default='.*')
+                        dest="tag_filter", help="tag filter for the the tag value, default .*")
 
     parser.add_argument('-n', '--not_use_tag_as_node', action='store_false',
                         dest="use_tag_as_node", help="use tag as a node, default true")
 
+    parser.add_argument('-T', '--service_node_sub_title',
+                        dest="service_node_sub_title", help="the subTitle name, if use tag as a node, default 'Service Node'")
+
     parser.add_argument('-l', '--loop_interval',
-                        dest="loop_interval", help="loop with interval defined, default 0 sec, which means no looping",
-                        default=0)
+                        dest="loop_interval", help="loop with interval defined, default 0 sec, which means no looping")
 
     parser.add_argument('-c', '--config',
                         dest="config", help="config file for connections, default config.yml", default='config.yml')
 
     parser.add_argument('-s', '--search_from',
-                        dest="search_from", help="the number of seconds to search back in time, default 7200 sec (2h)",
-                        default=7200)
-
+                        dest="search_from", help="the number of seconds to search back in time, default 7200 sec (2h)")
     parser.add_argument('-m', '--search_mode',
                         dest="search_mode",
-                        help="the Tempo search mode, available values are blocks, ingesters or all, default ingester",
-                        default='ingester')
+                        help="the Tempo search mode, available values are blocks, ingesters or all, default ingester")
 
     args = parser.parse_args()
-
     if not args.config:
         parser.print_help()
         exit(1)
-
     parsed_yaml = {}
     with open(args.config, 'r') as stream:
         try:
@@ -70,54 +101,64 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             print(exc)
             exit(1)
+    # Must include connections
+    if 'tempo' not in parsed_yaml or 'nodegraph_provider' not in parsed_yaml:
+        print(f"error - Configuration file must include connections")
+        parser.print_help()
+        exit(1)
+    try:
+        resolve(parsed_yaml, 'graph', 'name', args.graph, None)
+        resolve(parsed_yaml, 'query', 'tag', args.tag, 'service.name')
+        resolve(parsed_yaml, 'query', 'tag_filter', args.tag_filter, '.*')
+        resolve(parsed_yaml, 'query', 'use_tag_as_node', args.use_tag_as_node, True)
+        resolve(parsed_yaml, 'query', 'service_node_sub_title', args.service_node_sub_title, 'Service Node')
+        resolve(parsed_yaml, 'loop', 'interval', args.loop_interval, '0')
+        resolve(parsed_yaml, 'search', 'from', args.search_from, '7200')
+        resolve(parsed_yaml, 'search', 'mode', args.search_mode, 'ingesters')
+    except MissingArgument as err:
+        print(f"error - {err.get_missing()}")
+        parser.print_help()
+        exit(1)
 
-    if 'graph' in parsed_yaml:
-        graph = parsed_yaml['graph'].get('name', args.graph)
-    else:
-        graph = args.graph
+    info = {}
+    for key in parsed_yaml.keys():
+        if key in ['graph', 'query', 'loop', 'search']:
+            info[key] = parsed_yaml[key]
 
-    if 'query' in parsed_yaml:
-        tag = parsed_yaml['query'].get('tag', args.tag)
-        tag_filter = parsed_yaml['query'].get('tag_filter', args.tag_filter)
-        use_tag_as_node = parsed_yaml['query'].get('use_tag_as_node', args.use_tag_as_node)
-    else:
-        tag = args.tag
-        tag_filter = args.tag_filter
-        use_tag_as_node = args.use_tag_as_node
+    log.info_fmt(info, "configuration")
+    return parsed_yaml
 
-    if 'loop' in parsed_yaml:
-        loop_interval = parsed_yaml['loop'].get('interval', args.loop_interval)
-    else:
-        loop_interval = args.loop_interval
 
-    if 'search' in parsed_yaml:
-        search_from = parsed_yaml['search'].get('from', args.search_from)
-        search_mode = parsed_yaml['search'].get('mode', args.search_mode)
-    else:
-        search_from = args.search_from
-        search_mode = args.search_mode
+if __name__ == "__main__":
+    conf = argument_parser()
 
     nodegraph_provider_con = RestConnection()
-    nodegraph_provider_con.url = parsed_yaml['nodegraph_provider']['url']
-    nodegraph_provider_con.headers = parsed_yaml['nodegraph_provider']['headers']
+    nodegraph_provider_con.url = conf['nodegraph_provider']['url']
+    nodegraph_provider_con.headers = conf['nodegraph_provider']['headers']
 
     tempo_con = RestConnection()
-    tempo_con.url = parsed_yaml['tempo']['url']
-    tempo_con.headers = parsed_yaml['tempo']['headers']
+    tempo_con.url = conf['tempo']['url']
+    tempo_con.headers = conf['tempo']['headers']
 
     while True:
-        tempo = TempoTraces(graph=graph, connection=tempo_con, tag=tag, tag_filter=tag_filter,
-                            use_tag_as_node=use_tag_as_node)
-        nodes, edges = tempo.execute(start_time=int(time.time() - float(search_from)), end_time=int(time.time()))
+        tempo = TempoTraces(graph=conf['graph']['name'], connection=tempo_con,
+                            tag=conf['query']['tag'],
+                            tag_filter=conf['query']['tag_filter'],
+                            use_tag_as_node=conf['query']['use_tag_as_node'],
+                            service_node_sub_title=conf['query']['service_node_sub_title'])
 
-        nodeprovider = NodeGraphAPI(graph=graph, connection=nodegraph_provider_con)
+        nodes, edges = tempo.execute(start_time=int(time.time() - float(conf['search']['from'])),
+                                     end_time=int(time.time()),
+                                     search_mode=conf['search']['mode'])
+
+        nodeprovider = NodeGraphAPI(graph=conf['graph']['name'], connection=nodegraph_provider_con)
 
         if nodes and edges:
             nodeprovider.update_nodes(nodes=nodes, edges=edges)
         else:
             nodeprovider.delete_graph()
 
-        if int(loop_interval) == 0:
+        if int(conf['loop']['interval']) == 0:
             break
         else:
-            time.sleep(int(loop_interval))
+            time.sleep(int(conf['loop']['interval']))
