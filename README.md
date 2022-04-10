@@ -1,3 +1,5 @@
+![Docker Pulls](https://img.shields.io/docker/pulls/athenodon/tempo_trace_aggregation)
+
 Tempo trace aggregation - tta
 -----------------------------
 
