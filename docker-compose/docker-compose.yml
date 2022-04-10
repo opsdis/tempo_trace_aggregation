@@ -1,8 +1,7 @@
 version: '3.3'
 services:
   nodegraph-provider:
-    #image: athenodon/nodegraph-provider:latest
-    image: nodegraph-provider
+    image: athenodon/nodegraph-provider:0.1.0
     container_name: nodegraph-provider
     restart: always
     environment:
@@ -28,11 +27,7 @@ services:
       - '6379:6379'
 
   tta:
-    #container_name: tempo_trace_aggregation
-    #build:
-    #  context: ./
-      #target: production
-    image: tempo_trace_aggregation
+    image: athenodon/tempo_trace_aggregation:0.1.0
     depends_on:
       - "nodegraph-provider"
     networks:
