@@ -134,10 +134,12 @@ class TempoTraces:
             try:
                 s_t = time.time()
                 all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}&start={start_time}&end={end_time}")
-                log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'response_time': (time.time() - s_t)},
+                log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value,
+                              'response_time': (time.time() - s_t)},
                              "Search traces")
             except EmptyResponse:
-                log.info_fmt({'graph': self.graph, 'url': f"/search?tags={self.tag}%3D{tag_value}"}, f"{EMPTY_RESPONSE}")
+                log.info_fmt({'graph': self.graph, 'url': f"/search?tags={self.tag}%3D{tag_value}"},
+                             f"{EMPTY_RESPONSE}")
                 continue
 
             # high level node for the service
@@ -155,17 +157,20 @@ class TempoTraces:
                 service_node = nodes[service_node_id]
 
             if 'traces' in all_traces:
-                log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'count': len(all_traces['traces'])},
-                             "Number of traces")
+                log.info_fmt(
+                    {'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'count': len(all_traces['traces'])},
+                    "Number of traces")
                 for trace in all_traces['traces']:
                     if 'rootTraceName' in trace:
                         try:
                             s_t = time.time()
                             trace_spans = self._api_call(f"/traces/{trace['traceID']}?mode={search_mode}")
-                            log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'trace_id': trace['traceID'],
+                            log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value,
+                                          'trace_id': trace['traceID'],
                                           'response_time': (time.time() - s_t)}, "Fetch trace")
                         except EmptyResponse:
-                            log.info_fmt({'graph': self.graph, 'url': f"/traces/{trace['traceID']}"}, f"{EMPTY_RESPONSE}")
+                            log.info_fmt({'graph': self.graph, 'url': f"/traces/{trace['traceID']}"},
+                                         f"{EMPTY_RESPONSE}")
                             continue
                         for span_resources in trace_spans['batches']:
                             # print(span_resources['resource']['attributes'][0]['value']['stringValue'])
@@ -244,7 +249,8 @@ class TempoTraces:
                     return response
 
         except Exception as err:
-            log.error_fmt({'graph': self.graph, 'error': err.__str__()}, "Connection to tempo failed")
+            log.error_fmt({'graph': self.graph, 'tag': self.tag, 'url': url_path, 'error': err.__str__()},
+                          "Connection to tempo failed")
         raise EmptyResponse()
 
 
@@ -259,7 +265,8 @@ class NodeGraphAPI:
                           headers=self._connection.headers)
         except Exception as err:
             log.error_fmt(
-                {'graph': self.graph, 'error': err.__str__()}, "Connection to nodegraph_provider failed")
+                {'graph': self.graph, 'operation': 'delete-all', 'error': err.__str__()},
+                "Connection to nodegraph_provider failed")
 
     def update_nodes(self, nodes: List[Node], edges: List[Edge]):
         self.delete_graph()
@@ -277,8 +284,13 @@ class NodeGraphAPI:
                                  headers=self._connection.headers,
                                  params=node.to_params())
                 else:
-                    log.warn_fmt({'graph': self.graph, 'status_code': r.status_code}, "Failed to create/update node")
+                    log.warn_fmt({'graph': self.graph, 'object': 'node', 'operation': 'create/update',
+                                  'status_code': r.status_code}, "Failed to create/update node")
+        except Exception as err:
+            log.error_fmt({'graph': self.graph, 'object': 'node', 'operation': 'create/update', 'error': err.__str__()},
+                          "Connection to nodegraph_provider failed")
 
+        try:
             for edge in edges:
                 r = requests.get(f"{self._connection.url}/api/edges/{self.graph}/{edge.source}/{edge.target}",
                                  headers=self._connection.headers)
@@ -291,11 +303,13 @@ class NodeGraphAPI:
                                  headers=self._connection.headers,
                                  params=node.to_params())
                 else:
-                    log.warn_fmt({'graph': self.graph, 'status_code': r.status_code}, "Failed to create/update edge")
+                    log.warn_fmt({'graph': self.graph, 'object': 'edge', 'operation': 'create/update',
+                                  'status_code': r.status_code}, "Failed to create/update edge")
 
         except Exception as err:
-            log.error_fmt({'graph': self.graph, 'error': err.__str__()}, "Connection to nodegraph_provider failed")
-        finally:
-            log.info_fmt(
-                {'graph': self.graph, 'nodes': len(nodes), 'edges': len(edges), 'time': time.time() - start},
-                "Update nodegraph_provider")
+            log.error_fmt({'graph': self.graph, 'object': 'edge', 'operation': 'create/update', 'error': err.__str__()},
+                          "Connection to nodegraph_provider failed")
+
+        log.info_fmt(
+            {'graph': self.graph, 'nodes': len(nodes), 'edges': len(edges), 'time': time.time() - start},
+            "Update nodegraph_provider")
