@@ -245,7 +245,8 @@ class TempoTraces:
 
     def _api_call(self, url_path: str) -> Dict[str, Any]:
         try:
-            r = requests.get(url=f"{self._connection.url}{url_path}", headers=self._connection.headers, timeout=self._connection.timeout)
+            r = requests.get(url=f"{self._connection.url}{url_path}", headers=self._connection.headers,
+                             timeout=self._connection.timeout)
             if r.status_code == 200:
                 response = r.json()
                 if response:
@@ -264,14 +265,22 @@ class NodeGraphAPI:
 
     def delete_graph(self):
         try:
-            requests.post(f"{self._connection.url}/api/controller/{self.graph}/delete-all",
+            requests.delete(f"{self._connection.url}/api/graphs/{self.graph}",
                           headers=self._connection.headers, timeout=self._connection.timeout)
+            #requests.post(f"{self._connection.url}/api/controller/{self.graph}/delete-all",
+                          #headers=self._connection.headers, timeout=self._connection.timeout)
         except Exception as err:
             log.error_fmt(
                 {'graph': self.graph, 'operation': 'delete-all', 'error': err.__str__()},
                 "Connection to nodegraph_provider failed")
 
     def update_nodes(self, nodes: List[Node], edges: List[Edge]):
+        """
+        This method is deprecated
+        :param nodes:
+        :param edges:
+        :return:
+        """
         self.delete_graph()
 
         start = time.time()
@@ -315,6 +324,31 @@ class NodeGraphAPI:
             log.error_fmt({'graph': self.graph, 'object': 'edge', 'operation': 'create/update', 'error': err.__str__()},
                           "Connection to nodegraph_provider failed")
 
+        log.info_fmt(
+            {'graph': self.graph, 'nodes': len(nodes), 'edges': len(edges), 'time': time.time() - start},
+            "Update nodegraph_provider")
+
+    def batch_update_nodes(self, nodes: List[Node], edges: List[Edge]):
+
+        start = time.time()
+
+        batch = {'nodes': [], 'edges': []}
+
+        for node in nodes:
+            batch['nodes'].append(node.to_params_id())
+        for edge in edges:
+            batch['edges'].append(edge.to_params())
+
+        try:
+            r = requests.post(f"{self._connection.url}/api/graphs/{self.graph}", headers=self._connection.headers,
+                              timeout=self._connection.timeout,
+                              data=json.dumps(batch))
+            if r.status_code != 201:
+                log.warn_fmt({'graph': self.graph, 'object': 'graph', 'operation': 'create',
+                              'status_code': r.status_code}, "Failed to create graph")
+        except Exception as err:
+            log.error_fmt({'graph': self.graph, 'object': 'graph', 'operation': 'create', 'error': err.__str__()},
+                          "Connection to nodegraph_provider failed")
         log.info_fmt(
             {'graph': self.graph, 'nodes': len(nodes), 'edges': len(edges), 'time': time.time() - start},
             "Update nodegraph_provider")

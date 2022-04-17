@@ -165,7 +165,7 @@ if __name__ == "__main__":
         nodeprovider = NodeGraphAPI(graph=conf['graph']['name'], connection=nodegraph_provider_con)
 
         if nodes and edges:
-            nodeprovider.update_nodes(nodes=nodes, edges=edges)
+            nodeprovider.batch_update_nodes(nodes=nodes, edges=edges)
         else:
             nodeprovider.delete_graph()
 
