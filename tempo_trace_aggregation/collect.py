@@ -121,6 +121,7 @@ class TempoTraces:
 
         start = time.time()
         log.info_fmt({'graph': self.graph, 'tag': self.tag}, "Search tags")
+        # Get all values for the selected tag, e.g. service.name
         try:
             all_service_tags = self._api_call(f"/search/tag/{self.tag}/values")
         except EmptyResponse:
@@ -131,11 +132,15 @@ class TempoTraces:
         span_to_node: Dict[str, Set[str]] = {}
         node_span_parent: Dict[str, Set[str]] = {}
 
+        # Iterate over values of the tag and match against regular expression in tag_filter
+        # e.g. tag_filer = "cortex.*)
         for tag_value in all_service_tags['tagValues']:
             if not re.search(self.tag_filter, tag_value):
                 continue
             try:
                 s_t = time.time()
+                # Get all trace id for the specific tag_value e.g cortex-ingester, cortex-compactor and
+                # for the time period start_time to end_time
                 all_traces = self._api_call(f"/search?tags={self.tag}%3D{tag_value}&start={start_time}&end={end_time}")
                 log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value,
                               'response_time': (time.time() - s_t)},
@@ -159,14 +164,20 @@ class TempoTraces:
                     span_to_node[service_node_id].add(service_node_id)
                 service_node = nodes[service_node_id]
 
+            # If the above search include traces
             if 'traces' in all_traces:
                 log.info_fmt(
                     {'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value, 'count': len(all_traces['traces'])},
                     "Number of traces")
                 for trace in all_traces['traces']:
+                    # Only use traces where the rootTraceName is existing and set
+                    # The rootTraceName is missing if the trace is not "completed" yet
+                    # Typical the rootServiceName is set to '<root span not yet received>'
                     if 'rootTraceName' in trace:
                         try:
                             s_t = time.time()
+                            # Fetch the complete trace with the search_mode that define if the search should be done
+                            # on the blocks, ingesters or both (all)
                             trace_spans = self._api_call(f"/traces/{trace['traceID']}?mode={search_mode}")
                             log.info_fmt({'graph': self.graph, 'tag': self.tag, 'tag_value': tag_value,
                                           'trace_id': trace['traceID'],
@@ -175,13 +186,24 @@ class TempoTraces:
                             log.info_fmt({'graph': self.graph, 'url': f"/traces/{trace['traceID']}"},
                                          f"{EMPTY_RESPONSE}")
                             continue
+
+                        # All spans are located in the key batches. This is a list of dict with 'resource' and
+                        # 'instrumentationLibrarySpans'
+                        # resource include a list of attributes for the span with key value, e.g.
+                        # {'key': 'service.name', 'value': {'stringValue': 'cortex-distributor'}}
+                        # {'key': 'ip', 'value': {'stringValue': '10.62.133.95'}}
                         for span_resources in trace_spans['batches']:
-                            # print(span_resources['resource']['attributes'][0]['value']['stringValue'])
+
+                            # The first in the list is the key service.name
+                            # TODO - if this in the future is not sorted we need to loop through the list
                             service = span_resources['resource']['attributes'][0]['value']['stringValue']
+                            # Get all the spanid
                             for spans in span_resources['instrumentationLibrarySpans']:
                                 for span in spans['spans']:
                                     if 'name' in span:
-                                        # print(f">>>> {span['spanId']} {span['name']}")
+                                        # Get the span name and create an encoding of the combination of
+                                        # service and span name, e.g. 'cortex-ingester##/cortex.Ingester/Push'
+                                        # This is used as the Node identity
                                         node_id = md5(str.encode(f"{service}##{span['name']}")).hexdigest()
                                         if node_id not in nodes:
                                             node = Node()
@@ -224,14 +246,19 @@ class TempoTraces:
         if nodes:
             for node_id_taget, spans in node_span_parent.items():
                 for span_id in spans:
-                    for node_id_source in span_to_node[span_id]:
-                        edge = Edge()
-                        edge.source = node_id_source
-                        edge.target = node_id_taget
-                        if f"{edge.source}#{edge.target}" not in edges:
-                            edges[f"{edge.source}#{edge.target}"] = edge
-                        edge = edges[f"{edge.source}#{edge.target}"]
-                        edge.mainStat += 1
+                    if span_id in span_to_node:
+                        for node_id_source in span_to_node[span_id]:
+                            edge = Edge()
+                            edge.source = node_id_source
+                            edge.target = node_id_taget
+                            if f"{edge.source}#{edge.target}" not in edges:
+                                edges[f"{edge.source}#{edge.target}"] = edge
+                            edge = edges[f"{edge.source}#{edge.target}"]
+                            edge.mainStat += 1
+                    else:
+                        log.info_fmt(
+                            {'graph': self.graph, 'span_id': span_id},
+                            "Missing span id in node graph when creating edges")
 
         log.info_fmt(
             {'graph': self.graph, 'nodes': len(nodes.values()), 'edges': len(edges.values()),
