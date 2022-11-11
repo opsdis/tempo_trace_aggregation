@@ -198,7 +198,15 @@ class TempoTraces:
                             # TODO - if this in the future is not sorted we need to loop through the list
                             service = span_resources['resource']['attributes'][0]['value']['stringValue']
                             # Get all the spanid
-                            for spans in span_resources['instrumentationLibrarySpans']:
+                            # Where are the spans?
+                            # Depending on trace framework the span data can be in different part of the returned trace
+                            # Better would be to define otel, zipkin etc as a config
+                            # scopeSpans is when the otel collector is used
+                            span_key = "scopeSpans"
+                            if 'instrumentationLibrarySpans' in span_resources:
+                                span_key = 'instrumentationLibrarySpans'
+
+                            for spans in span_resources[span_key]:
                                 for span in spans['spans']:
                                     if 'name' in span:
                                         # Get the span name and create an encoding of the combination of
