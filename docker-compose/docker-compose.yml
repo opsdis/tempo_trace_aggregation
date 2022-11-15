@@ -27,7 +27,7 @@ services:
       - '6379:6379'
 
   tta:
-    image: athenodon/tempo_trace_aggregation:0.3.0
+    image: athenodon/tempo_trace_aggregation:0.3.1
     depends_on:
       - "nodegraph-provider"
     networks:
