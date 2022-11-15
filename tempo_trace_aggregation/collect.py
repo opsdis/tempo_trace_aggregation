@@ -282,11 +282,14 @@ class TempoTraces:
         try:
             r = requests.get(url=f"{self._connection.url}{url_path}", headers=self._connection.headers,
                              timeout=self._connection.timeout)
+
             if r.status_code == 200:
                 response = r.json()
                 if response:
                     return response
-
+            else:
+                log.error_fmt({'graph': self.graph, 'tag': self.tag, 'url': url_path, 'status': r.status_code},
+                              "Not a expected response")
         except Exception as err:
             log.error_fmt({'graph': self.graph, 'tag': self.tag, 'url': url_path, 'error': err.__str__()},
                           "Connection to tempo failed")
