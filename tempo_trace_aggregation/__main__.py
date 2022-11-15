@@ -47,7 +47,7 @@ def resolve(arguments: {}, config_object: str, attribute: str, arg, default=None
             arguments[config_object][attribute] = arg
     elif config_object not in arguments and default:
         arguments[config_object] = {attribute: default}
-    elif config_object in arguments and attribute not in arguments[config_object] and default:
+    elif config_object in arguments and attribute not in arguments[config_object] and default != None:
         arguments[config_object][attribute] = default
 
     if config_object not in arguments:
@@ -72,8 +72,8 @@ def argument_parser() -> Dict[str, Any]:
     parser.add_argument('-f', '--filter',
                         dest="tag_filter", help="tag filter for the the tag value, default .*")
 
-    parser.add_argument('-n', '--not_use_tag_as_node', action='store_false',
-                        dest="use_tag_as_node", help="use tag as a node, default true")
+    parser.add_argument('-n', '--use_tag_as_node',
+                        dest="use_tag_as_node", help="use tag as a node, default false")
 
     parser.add_argument('-T', '--service_node_sub_title',
                         dest="service_node_sub_title", help="the subTitle name, if use tag as a node, default 'Service Node'")
@@ -115,7 +115,7 @@ def argument_parser() -> Dict[str, Any]:
         resolve(parsed_yaml, 'graph', 'name', args.graph, None)
         resolve(parsed_yaml, 'query', 'tag', args.tag, 'service.name')
         resolve(parsed_yaml, 'query', 'tag_filter', args.tag_filter, '.*')
-        resolve(parsed_yaml, 'query', 'use_tag_as_node', args.use_tag_as_node, True)
+        resolve(parsed_yaml, 'query', 'use_tag_as_node', args.use_tag_as_node, False)
         resolve(parsed_yaml, 'query', 'trace_threshold_ms', args.trace_threshold_ms, '40.0')
         resolve(parsed_yaml, 'query', 'service_node_sub_title', args.service_node_sub_title, 'Service Node')
         resolve(parsed_yaml, 'loop', 'interval', args.loop_interval, '0')
